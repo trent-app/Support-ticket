@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Ticket System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .ticket-form, .ticket-list {
+            margin-bottom: 30px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .ticket-form input, .ticket-form select, .ticket-form button, .ticket-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .ticket-form button {
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+
+        .ticket-form button:hover {
+            background-color: #0056b3;
+        }
+
+        .ticket-list table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .ticket-list th, .ticket-list td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .ticket-list th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        .ticket-status {
+            color: white;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .open {
+            background-color: #28a745;
+        }
+
+        .in-progress {
+            background-color: #ffc107;
+        }
+
+        .resolved {
+            background-color: #6c757d;
+        }
+
+        .closed {
+            background-color: #dc3545;
+        }
+
+        .action-btn {
+            cursor: pointer;
+            padding: 8px 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .action-btn:hover {
+            background-color: #218838;
+        }
+
+        .action-btn-assign {
+            background-color: #007BFF;
+        }
+
+        .action-btn-assign:hover {
+            background-color: #0056b3;
+        }
+
+        .action-btn-resolve {
+            background-color: #6c757d;
+        }
+
+        .action-btn-resolve:hover {
+            background-color: #5a6268;
+        }
+
+        .action-btn-close {
+            background-color: #dc3545;
+        }
+
+        .action-btn-close:hover {
+            background-color: #c82333;
+        }
+
+        /* Speech Button Styling */
+        .speech-btn {
+            background-color: #ffc107;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .speech-btn:hover {
+            background-color: #e0a800;
+        }
+
+        /* Visual feedback for speech recognition */
+        .speech-feedback {
+            display: none;
+            background-color: #28a745;
+            color: white;
+            padding: 5px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        /* Modal (Pop-up) Styling */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; 
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            padding-top: 60px;
+        }
+
+        /* Modal Content */
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 5px;
+        }
+
+        /* Close Button */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Temporary live transcription box */
+        #liveTranscription {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 50px;
+            background-color: #f8f9fa;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Support Ticket System</h1>
+
+    <!-- Ticket Submission Form -->
+    <div class="ticket-form">
+        <h3>Create a Ticket</h3>
+        <form id="ticketForm">
+            <input type="text" id="ticketTitle" placeholder="Ticket Title" required>
+            <textarea id="ticketDescription" rows="4" placeholder="Describe the issue" required></textarea>
+            <select id="ticketCategory" required>
+                <option value="">Select Category</option>
+                <option value="Billing">Billing</option>
+                <option value="Technical">Technical Support</option>
+                <option value="Account">Account Management</option>
+                <option value="Network">Network Issues</option>
+                <option value="Other">Other</option>
+            </select>
+            <button type="submit">Submit Ticket</button>
+        </form>
+        <button class="speech-btn" id="startSpeechRecognition">Start Dictation</button>
+        <div id="speechFeedback" class="speech-feedback">Listening...</div> <!-- Feedback for speech recognition -->
+    </div>
+
+    <!-- Ticket List -->
+    <div class="ticket-list">
+        <h3>Ticket Dashboard</h3>
+        <table id="ticketTable">
+            <thead>
+                <tr>
+                    <th>Ticket ID</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Tickets will appear here -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal for Speech-to-Text -->
+<div id="dictationModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="closeModal">&times;</span>
+        <h3>Speech Dictation</h3>
+        <div id="liveTranscription" contenteditable="true" readonly></div>
+        <button id="stopDictation" class="speech-btn">Stop Dictation</button>
+    </div>
+</div>
+
+<script>
+    let ticketIdCounter = 1;
+    const tickets = [];
+
+    // Keywords for category matching (improved matching)
+    const categoryKeywords = {
+        Billing: ['invoice', 'payment', 'charge', 'billing', 'bill'],
+        Technical: ['bug', 'error', 'technical', 'software', 'hardware', 'problem'],
+        Account: ['account', 'profile', 'login', 'security', 'password'],
+        Network: ['network', 'connection', 'wifi', 'internet', 'router'],
+        Other: ['issue', 'problem', 'help', 'support', 'query']
+    };
+
+    // Check if Speech Recognition is supported
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        alert("Your browser does not support Speech Recognition API.");
+    } else {
+        // Initialize Speech Recognition
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onstart = function() {
+            console.log("Speech recognition started.");
+            document.getElementById('speechFeedback').style.display = 'inline'; // Show feedback
+        };
+
+        recognition.onend = function() {
+            console.log("Speech recognition ended.");
+            document.getElementById('speechFeedback').style.display = 'none'; // Hide feedback
+        };
+
+        recognition.onerror = function(event) {
+            console.error("Speech recognition error", event);
+            alert("There was an error with speech recognition. Please try again.");
+            document.getElementById('speechFeedback').style.display = 'none'; // Hide feedback
+        };
+
+        recognition.onresult = function(event) {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+            }
+            document.getElementById('liveTranscription').textContent = transcript;
+            
+            // Automatically select category based on keywords
+            updateCategorySelection(transcript);
+        };
+
+        // Show Modal and Start Dictation
+        document.getElementById('startSpeechRecognition').addEventListener('click', function() {
+            // Show the dictation modal
+            document.getElementById('dictationModal').style.display = 'block';
+            recognition.start();
+        });
+
+        // Close Modal
+        document.getElementById('closeModal').addEventListener('click', function() {
+            document.getElementById('dictationModal').style.display = 'none';
+            recognition.stop();
+        });
+
+        // Stop Dictation and Transfer Text
+        document.getElementById('stopDictation').addEventListener('click', function() {
+            const dictationText = document.getElementById('liveTranscription').textContent;
+            document.getElementById('ticketDescription').value = dictationText; // Transfer text to the description field
+            document.getElementById('dictationModal').style.display = 'none'; // Close the modal
+            recognition.stop();
+        });
+    }
+
+    // Category selection based on spoken text or manually typed text
+    function updateCategorySelection(inputText) {
+        console.log("Input Text: ", inputText);
+
+        for (let category in categoryKeywords) {
+            const keywords = categoryKeywords[category];
+            for (let keyword of keywords) {
+                if (inputText.toLowerCase().includes(keyword.toLowerCase())) {
+                    document.getElementById('ticketCategory').value = category;
+                    console.log(`Category selected: ${category}`); // Debug log
+                    return;  // Select the first matching category and stop checking
+                }
+            }
+        }
+    }
+
+    // Attach event listener to detect text input manually
+    document.getElementById('ticketDescription').addEventListener('input', function() {
+        const text = this.value;
+        updateCategorySelection(text); // Trigger category update on typing
+    });
+
+    // Create Ticket and Add to Table
+    document.getElementById('ticketForm').addEventListener('submit', function (event) {
+        event.preventDefault();
+        const title = document.getElementById('ticketTitle').value;
+        const description = document.getElementById('ticketDescription').value;
+        const category = document.getElementById('ticketCategory').value;
+
+        if (!title || !description || !category) {
+            alert('Please fill all fields.');
+            return;
+        }
+
+        const newTicket = {
+            id: ticketIdCounter++,
+            title,
+            description,
+            category,
+            status: 'Open',
+            assignedTo: null
+        };
+
+        tickets.push(newTicket);
+        renderTickets();
+        event.target.reset(); // Reset the form
+    });
+
+    // Render Tickets
+    function renderTickets() {
+        const ticketTableBody = document.getElementById('ticketTable').getElementsByTagName('tbody')[0];
+        ticketTableBody.innerHTML = ''; // Clear existing rows
+
+        tickets.forEach(ticket => {
+            const row = ticketTableBody.insertRow();
+            row.innerHTML = `
+                <td>${ticket.id}</td>
+                <td>${ticket.title}</td>
+                <td>${ticket.category}</td>
+                <td><span class="ticket-status ${ticket.status.toLowerCase()}">${ticket.status}</span></td>
+                <td>
+                    ${ticket.status === 'Open' ? `<button class="action-btn action-btn-assign" onclick="assignTicket(${ticket.id})">Assign</button>` : ''}
+                    ${ticket.status === 'In Progress' ? `<button class="action-btn action-btn-resolve" onclick="resolveTicket(${ticket.id})">Resolve</button>` : ''}
+                    ${ticket.status === 'Resolved' ? `<button class="action-btn action-btn-close" onclick="closeTicket(${ticket.id})">Close</button>` : ''}
+                </td>
+            `;
+        });
+    }
+
+    // Assign Ticket to Agent
+    function assignTicket(ticketId) {
+        const ticket = tickets.find(t => t.id === ticketId);
+        if (ticket.status !== 'Open') return;
+        ticket.status = 'In Progress';
+        ticket.assignedTo = 'Agent 1'; // Simulate agent assignment
+        renderTickets();
+    }
+
+    // Resolve Ticket
+    function resolveTicket(ticketId) {
+        const ticket = tickets.find(t => t.id === ticketId);
+        if (ticket.status !== 'In Progress') return;
+        ticket.status = 'Resolved';
+        renderTickets();
+    }
+
+    // Close Ticket
+    function closeTicket(ticketId) {
+        const ticket = tickets.find(t => t.id === ticketId);
+        if (ticket.status !== 'Resolved') return;
+        ticket.status = 'Closed';
+        renderTickets();
+    }
+</script>
+
+</body>
+</html>
